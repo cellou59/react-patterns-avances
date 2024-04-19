@@ -5,7 +5,7 @@ import * as React from 'react'
 import CheckBox from '../checkbox'
 
 // 🐶 transforme 'CompoundComponentParent' en vrai composant composé
-function CompoundComponentParent() {
+function CompoundComponentParent({children}) {
   const [checked, setChecked] = React.useState(false)
   const tick = () => setChecked(!checked)
 
@@ -13,28 +13,28 @@ function CompoundComponentParent() {
   // Pour parcourir tous les children utilise `React.Children.map`
   // Pour cloner utilise `React.cloneElement`
   // lors du clone passe les props 'checked' et 'tick'
-  // 🤖 React.Children.map(children, child => React.cloneElement(child, {checked: checked, tick: tick}),)
+ 
   // 📑 https://fr.reactjs.org/docs/react-api.html#reactchildren
   // 📑 https://fr.reactjs.org/docs/react-api.html#cloneelement
-  return <CheckBox checked={checked} onChange={tick} />
+  return  React.Children.map(children, child => React.cloneElement(child, {checked, tick}),)
 }
 
 // 🐶 Accepte les props 'checked' et 'children'
-function Accept() {
+function Accept({checked,children}) {
   // 🐶 retourne le 'children' si 'checked' est à 'true', 'null' sinon
-  return null
+  return checked ? (<div>{children}</div>) : null
 }
 
 // 🐶 Accepte les props 'checked' et 'children'
-function Decline() {
+function Decline({checked,children}) {
   // 🐶 retourne le 'children' si 'checked' est à 'true', 'null' sinon
-  return null
+  return checked ? null : (<div>{children}</div>)
 }
 
 // 🐶 Accepte les props 'checked' et 'tick' et ...props
-function CheckBoxButton() {
-  // 🤖 return <CheckBox checked={checked} onChange={tick} {...props} />
-  return null
+function CheckBoxButton({checked,tick,props}) {
+   return <CheckBox checked={checked} onChange={tick} {...props} />
+
 }
 
 function App() {
