@@ -9,12 +9,17 @@ const executeAll =
   (...args) =>
     functions.forEach(func => func?.(...args))
 
+const actionTypes = {
+  tick: 'tick',
+  reset: 'reset',
+}
+
 function defaultCheckboxReducer(state, action) {
   switch (action.type) {
-    case 'tick': {
+    case actionTypes.tick: {
       return {checked: !state.checked}
     }
-    case 'reset': {
+    case actionTypes.reset: {
       return action.initialState
     }
     default: {
@@ -23,19 +28,17 @@ function defaultCheckboxReducer(state, action) {
   }
 }
 
-// 🐶 ajoute un paramètre 'reducer' initialisé par defaut à 'defaultCheckboxReducer'
-// 🤖 {initialChecked = false, reducer = defaultCheckboxReducer} = {}
-function useCheckBox({initialChecked = false}) {
+
+function useCheckBox({initialChecked = false, reducer = defaultCheckboxReducer} ={}) {
   const initialState = {checked: initialChecked}
-  // 🐶 A la place d'utiliser 'defaultCheckboxReducer' utilise 'reducer' passé en paramètre.
   const [state, dispatch] = React.useReducer(
-    defaultCheckboxReducer,
+    reducer,
     initialState,
   )
   const {checked} = state
 
-  const tick = () => dispatch({type: 'tick'})
-  const reset = () => dispatch({type: 'reset', initialState})
+  const tick = () => dispatch({type: actionTypes.tick})
+  const reset = () => dispatch({type: actionTypes.reset, initialState})
 
   const getCheckboxerProps = ({onClick, ...props} = {}) => {
     return {
@@ -65,18 +68,15 @@ function App() {
   const [timesChanged, setTimesChanged] = React.useState(0)
   const changedTooMuch = timesChanged >= 4
 
-  // 🐶 dans ce reducer personnalisé, implémente la logique propre à la checkbox de App
   function customCheckboxStateReducer(state, action) {
     switch (action.type) {
-      case 'tick': {
-        // 🤖 implémente l'arret du changement d'état avec :
-        //
-        // if (changedTooMuch) {
-        //   return {checked: state.checked}
-        // }
+      case actionTypes.tick: {
+        if (changedTooMuch) {
+          return {checked: state.checked}
+        }
         return {checked: !state.checked}
       }
-      case 'reset': {
+      case actionTypes.reset: {
         return {checked: false}
       }
       default: {
@@ -84,18 +84,21 @@ function App() {
       }
     }
   }
+  function checkboxStateReducer(state, action) {
+    if (action.type === actionTypes.tick && changedTooMuch) {
+      return {checked: state.checked}
+    }
+    return defaultCheckboxReducer(state, action)
+  }
 
   const {checked, getCheckboxerProps, getResetterProps} = useCheckBox({
-    // 🐶 passe le customReducer
-    // 🤖 reducer: customCheckboxStateReducer,
+    reducer: checkboxStateReducer,
   })
 
   return (
     <div>
       <CheckBox
         {...getCheckboxerProps({
-          // 🤖 supprime disable
-          disabled: changedTooMuch,
           checked: checked,
           onClick: () => setTimesChanged(count => count + 1),
         })}
