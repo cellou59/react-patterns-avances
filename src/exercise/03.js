@@ -12,7 +12,12 @@ function useCheckBox() {
   // avec le  role:'checkbox','aria-checked': checked, onClick,onChange
   return {
     checked,
-    tick,
+    checkboxProps: {
+      role:'checkbox',
+      'aria-checked': checked,
+       onClick:tick,
+       onChange:tick,
+    },
   }
 }
 
