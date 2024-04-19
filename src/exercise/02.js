@@ -7,46 +7,33 @@ import '../tab.css'
 
 // 🐶 Créé un contexte 'TabsContext'
 // 🤖 utilise `React.createContext()`
+const TabsContext = React.createContext()
+
+function useTabs(){
+  const context = React.useContext(TabsContext)
+  if(!context){
+    throw new Error('Please use this context in TabsContext provider');
+  }
+  return context
+}
 
 function Tabs({children, ...props}) {
   const [selectedTabId, setSelectedTabId] = React.useState(0)
   const selectTab = id => setSelectedTabId(id)
 
-  // ⛏️ Supprime les 'clones' car nous allons passer les 'children' au context provider
-  const clones = React.Children.map(children, child => {
-    return typeof child.type === 'string'
-      ? child
-      : React.cloneElement(child, {
-          selectedTabId: selectedTabId,
-          selectTab: selectTab,
-          ...props,
-        })
-  })
-  // 🐶 retourne le context provider avec {selectedTabId, selectTab} comme 'value'.
-  // 🤖 <TabsContext.Provider value={{selectedTabId, selectTab}}>
   return (
-    // 🐶 cette div doit être dans le <TabsContext.Provider
-    <div className="tabs" {...props}>
-      {/* 🐶 change clone par children */}
-      {clones}
+    <div className="tabs">
+    <TabsContext.Provider value={{selectedTabId, selectTab}} {...props}>
+      {children}
+    </TabsContext.Provider>
     </div>
   )
 }
 
-// 🐶 Créé une hook consumer `useTabs()`
-function useTabs() {
-  return null
-}
-// Ce hook retourne le contexte
-// 🤖 React.useContext(TabsContext)
 
-// ⛏️ Supprime les props 'selectedTabId'  'selectTab' car inutile
-function TabList({children, selectedTabId, selectTab, ...props}) {
+function TabList({children, ...props}) {
   const clones = React.Children.map(children, (child, tabId) =>
     React.cloneElement(child, {
-      // ⛏️ Supprime les props 'selectedTabId'  'selectTab' car inutile
-      selectedTabId: selectedTabId,
-      selectTab: selectTab,
       tabId: tabId,
       ...props,
     }),
@@ -58,10 +45,8 @@ function TabList({children, selectedTabId, selectTab, ...props}) {
   )
 }
 
-// ⛏️ Supprime les props 'selectedTabId' et 'selectTab' car on utlisera `useTabs()`
-function Tab({selectedTabId, selectTab, tabId, children}) {
-  // 🐶 utilise `useTabs()`
-  // 🤖 const {selectedTabId, selectTab} = useTabs()
+function Tab({ tabId, children}) {
+  const {selectedTabId, selectTab} = useTabs()
   return (
     <button
       key={children}
@@ -73,38 +58,40 @@ function Tab({selectedTabId, selectTab, tabId, children}) {
   )
 }
 
-// ⛏️ Supprime selectedTabId
-function TabPanels({selectedTabId, children}) {
+
+function TabPanels({ children}) {
   return React.Children.map(children, (child, panelId) =>
     React.cloneElement(child, {
-      // ⛏️ Supprime selectedTabId
-      selectedTabId: selectedTabId,
       className: 'tabcontent',
       panelId,
     }),
   )
 }
-// ⛏️ Supprime selectedTabId
-function Panel({selectedTabId, panelId, children, ...props}) {
-  // 🐶 utilise `useTabs()` pour avoir 'selectedTabId'
+
+function Panel({ panelId, children, ...props}) {
+  const {selectedTabId} = useTabs()
   return selectedTabId === panelId ? <div {...props}>{children}</div> : null
 }
 
 function App() {
   return (
-    <Tabs>
-      <TabList>
-        <Tab>Londre</Tab>
-        <Tab>Paris</Tab>
-        <Tab>Tokyo</Tab>
-      </TabList>
-      <TabPanels>
-        <Panel>💷 Inscription pour aller à Londre</Panel>
-        <Panel>🥖 Inscription pour aller à Paris</Panel>
-        <Panel>🗻 Inscription pour aller à Tokyo</Panel>
-      </TabPanels>
-      <small> * Ceci est un autre composant</small>
-    </Tabs>
+    <>
+      <Tabs>
+        <TabList>
+          <Tab>Londre</Tab>
+          <Tab>Paris</Tab>
+          <Tab>Tokyo</Tab>
+          <Tab>Bali</Tab>
+        </TabList>
+        <TabPanels>
+          <Panel>💷 Inscription pour aller à Londre</Panel>
+          <Panel>🥖 Inscription pour aller à Paris</Panel>
+          <Panel>🗻 Inscription pour aller à Tokyo</Panel>
+          <Panel>🗻 Inscription pour aller à Bali</Panel>
+        </TabPanels>
+        <small> * Ceci est un autre composant</small>
+      </Tabs>
+    </>
   )
 }
 
