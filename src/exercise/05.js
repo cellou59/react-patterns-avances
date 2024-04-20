@@ -3,7 +3,9 @@
 
 import * as React from 'react'
 import CheckBox from '../checkbox'
+import warning from 'warning'
 
+const hiddenWarning = process.env.NODE_ENV === 'production'
 const executeAll =
   (...functions) =>
   (...args) =>
@@ -28,42 +30,59 @@ function defaultCheckboxReducer(state, action) {
   }
 }
 
+function useOnChangeWarning(controlPropValue, controlPropName, componentName){
+  const {current: previousIsControlledMode} = React.useRef(controlPropValue)
+  React.useEffect(() => {
+    if(hiddenWarning) return
+    warning(
+      !(!previousIsControlledMode && controlPropValue),
+      `\`${controlPropName}\` passe d'un mode non-controllé à un mode controllé. Décider d'un mode controllé ou non pour \`${componentName}\``,
+    )
+    warning(
+      !(previousIsControlledMode && !controlPropValue),
+      `\`${controlPropName}\` passe d'un mode controllé à un mode non-controllé. Décider d'un mode controllé ou non \`${componentName}\` `,
+    )
+  }, [controlPropValue, previousIsControlledMode,controlPropName,componentName])
+}
+
+function useControlledCheckBoxWarning( controlPropValue,controlPropName,controlledCheckboxProp){
+  
+  const hasControlPropValue= typeof controlPropValue != 'undefined'
+  React.useEffect(() => {
+    if(hiddenWarning) return
+    warning(
+      !(!hasControlPropValue && controlledCheckboxProp),
+      `Un prop \`checked\` est passé à useCheckBox sans \`${controlPropName}\` . Cela rendra la checkbox en lecture seule. Si vous voulez le rendre modifiable, ajouter \`onChange\``,
+    )
+  }, [hasControlPropValue, controlledCheckboxProp,controlPropName])
+}
+
 function useCheckBox({
   initialChecked = false,
   reducer = defaultCheckboxReducer,
-  // 🐶 ajoute un prop `onChange` .
-  // 🐶 ajoute un prop `checked`
-  // 🤖 tu peux crée un alias  `controlledChecked` pour eviter le "variable shadowing."
-  //
-  //  onChange,
-  //  checked: controlledChecked
+   onChange,
+   checked: controlledChecked
 } = {}) {
   const initialState = {checked: initialChecked}
   const [state, dispatch] = React.useReducer(reducer, initialState)
 
-  // 🐶 créé une variable 'checkedIsControlled' qui permet de savoir si 'checked' est controllé
-  // 🤖 const checkedIsControlled = controlledChecked != null
+  const checkedIsControlled = controlledChecked != null
+  const checked = checkedIsControlled ? controlledChecked : state.checked
 
-  // 🐶 modifie la ligne suivante pour mettre à jour la valeur de 'checked' à 'controlledChecked'
-  // si 'checkedIsControlled' est à true sinon à 'state.checked'
-  // cele nous permet soit d'utiliser le state soit le prop
-  const {checked} = state
 
-  // 🐶 nous voulons maintenant appeler `onChange` à chaque fois que l'on doit changer le state
-  // et dispatch que si 'checked' est non controllé.
-  // pour cela on va creer une fonction intermediaire 'dispatchWithOnChange' qui gérera ce cas.
-  // 🤖
-  // function dispatchWithOnChange(action) {
-  //   if (!checkedIsControlled) {
-  //     dispatch(action)
-  //   }
-  //   // équivalent à `onChange(state, action)`
-  //   onChange?.(reducer({...state, checked}, action), action)
-  // }
+  useOnChangeWarning(checkedIsControlled,'useCheckBox','CheckBox')
+  useControlledCheckBoxWarning(onChange,'onChange',checkedIsControlled)
+
+  function dispatchWithOnChange(action) {
+    if (!checkedIsControlled) {
+      dispatch(action)
+    }
+    onChange?.(reducer({...state, checked}, action), action)
+  }
 
   // 🐶 Dans les ligne suivante utilise 'dispatchWithOnChange' au lieu de 'dispatch'
-  const tick = () => dispatch({type: actionTypes.tick})
-  const reset = () => dispatch({type: actionTypes.reset, initialState})
+  const tick = () => dispatchWithOnChange({type: actionTypes.tick})
+  const reset = () => dispatchWithOnChange({type: actionTypes.reset, initialState})
 
   const getCheckboxerProps = ({onClick, ...props} = {}) => {
     return {
