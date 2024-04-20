@@ -5,34 +5,41 @@ import * as React from 'react'
 import CheckBox from '../checkbox'
 
 // 🐶 Note : Le module commun  './06/context-counter' exporte 'context-counter-changed.js' et 'context-counter-general.js'
-import {CounterProvider, useCounter} from './06/context-counter'
+import {
+  CounterProvider,
+  CounterChangedProvider,
+  useCounterChanged,
+  useCounter,
+  decrement,
+  increment,
+  reset
+} from './06/context-counter'
 
 function Counter() {
   const [state, dispatch] = useCounter()
-  // ⛏️ Déplace et adapte les fonctions 'increment' et 'decrement' dans '06/context-counter.js'
-  // Pense ensuite à les réimporter pour pourvoir les utiliser
-  const increment = () => dispatch({type: 'increment'})
-  const decrement = () => dispatch({type: 'decrement'})
+  const [stateCounterChange, dispatchCounterChanged] = useCounterChanged()
+  const resetAll =() => {
+    reset(dispatch)
+    reset(dispatchCounterChanged)
+  }
   return (
     <div>
       <div>Compteur : {state.count}</div>
-      {/* 🐶 utilise les fonction 'increment' et 'decrement' importé avec comme paramètre 'dipatch'  */}
-      <button onClick={decrement}>-</button>
-      <button onClick={increment}>+</button>
+      <div>Compteur changed : {stateCounterChange.count}</div>
+      <button onClick={() => decrement(dispatch)}>-</button>
+      <button onClick={() => increment(dispatchCounterChanged)}>+</button>
+      <button onClick={resetAll}>reset All</button>
     </div>
   )
 }
 
 function TwoCheckbox() {
   const [, dispatch] = useCounter()
-  // ⛏️ supprime 'increment' car on l'utilise la fonction importé
-  const increment = () => dispatch({type: 'increment'})
-  const decrement = () => dispatch({type: 'decrement'})
+  const [, dispatchCounterChanged] = useCounterChanged()
   return (
     <div>
-      {/* 🐶 utilise les fonction 'increment' importé avec comme paramètre 'dipatch'  */}
-      <CheckBox onChange={increment} />
-      <CheckBox onChange={decrement} />
+      <CheckBox onChange={() => increment(dispatch)} />
+      <CheckBox onChange={() => decrement(dispatchCounterChanged)} />
     </div>
   )
 }
@@ -40,8 +47,10 @@ function TwoCheckbox() {
 function App() {
   return (
     <CounterProvider>
+      <CounterChangedProvider>
       <Counter />
       <TwoCheckbox />
+      </CounterChangedProvider>
     </CounterProvider>
   )
 }

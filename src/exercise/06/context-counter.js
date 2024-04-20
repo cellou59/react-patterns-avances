@@ -5,7 +5,9 @@ import {
 } from './context-counter-changed'
 
 // 🐶 créé les fonction 'increment' et 'decrement' avec comme paramètre 'dispatch' et qui disptach l'action
-
+const increment = (dispatch) => dispatch({type:'increment'})
+const decrement = (dispatch) => dispatch({type:'decrement'})
+const reset = (dispatch) => dispatch({type:'reset'})
 const defaultReducer = (state, action) => {
   const change = action.step ?? 1
   switch (action.type) {
@@ -30,5 +32,7 @@ export {
   useCounter,
   CounterChangedProvider,
   useCounterChanged,
-  // 🐶 exporte les fonctions 'increment' et 'decrement'
+  increment,
+  decrement,
+  reset
 }
